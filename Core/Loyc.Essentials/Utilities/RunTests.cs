@@ -20,18 +20,16 @@ namespace Loyc.MiniTest
 	/// </remarks>
 	public static class RunTests
 	{
-		/// <summary>
-		/// Runs all tests defined by the given object.
-		/// </summary>
-		/// <returns>The number of tests that failed.</returns>
+		/// <summary>Runs all test methods on the given object (public methods
+		/// that have a TestAttribute).</summary>
+		/// <returns>The number of tests that failed unexpectedly (where the
+		/// <see cref="TestAttribute.Fails"/> property is unset).</returns>
 		public static int Run(object o)
 		{
-			// run all the tests methods in the given object
-			MethodInfo[] methods = o.GetType().GetMethods();
-			bool any = false;
-			// A counter that counts the total number of errors.
+			int testCount = 0;
 			int errorCount = 0;
 
+			MethodInfo[] methods = o.GetType().GetMethods();
 			MethodInfo setup = GetSetup(methods);
 			MethodInfo teardown = GetTeardown(methods);
 
@@ -41,12 +39,12 @@ namespace Loyc.MiniTest
 				if (testAttr != null)
 				{
 					object fails = testAttr is TestAttribute ? ((TestAttribute)testAttr).Fails : null;
-					any = true;
+					testCount++;
 					try {
 						Console.Write("{0}.{1}", o.GetType().NameWithGenericArgs(), method.Name);
 						Console.WriteLine(fails != null ? " (Fails: "+fails+")" :  "");
 						if (setup != null)
-							setup.Invoke(o, null);
+							setup.Invoke(method.IsStatic ? null : o, null);
 						method.Invoke(o, null);
 					}
 					catch (TargetInvocationException tie)
@@ -64,12 +62,9 @@ namespace Loyc.MiniTest
 						}
 
 						if (!match) {
-							// Increment the error counter if this
-							// failure was unexpected.
 							if (fails == null)
 								errorCount++;
-							// Let the user know that something went wrong by
-							// printing some text to the console.
+							// Inform user that something went wrong.
 							var old = Console.ForegroundColor;
 							Console.ForegroundColor = fails != null ? ConsoleColor.DarkGray : ConsoleColor.Red;
 							Console.WriteLine("{0} while running {1}.{2}:",
@@ -86,17 +81,14 @@ namespace Loyc.MiniTest
 					}
 				}
 			}
-			if (!any)
+			if (testCount == 0)
 				Console.WriteLine("{0} contains no tests.", o.GetType().NameWithGenericArgs());
 
 			return errorCount;
 		}
 
-		/// <summary>
-		/// Runs all tests belonging to the given array
-		/// of objects.
-		/// </summary>
-		/// <returns>The total number of tests that failed.</returns>
+		/// <summary>Runs all tests in an array of test objects.</summary>
+		/// <returns>The total number of tests that unexpectedly failed.</returns>
 		public static int RunMany(params object[] os)
 		{
 			return os.Aggregate(0, (errCount, o) => errCount + Run(o));
@@ -104,7 +96,7 @@ namespace Loyc.MiniTest
 
 		private static object IsTest(MethodInfo info)
 		{
-			if (!info.IsStatic && info.IsPublic) {
+			if (info.IsPublic) {
 				// this lets us know if a method is a valid [Test] method
 				object[] attrs = info.GetCustomAttributes(true);
 				return attrs.FirstOrDefault(attr => attr.GetType().Name == "TestAttribute");

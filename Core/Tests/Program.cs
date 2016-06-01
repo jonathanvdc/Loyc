@@ -27,7 +27,7 @@ namespace Loyc.Tests
 		{
 			new Pair<string,Func<int>>("Run unit tests of Loyc.Essentials.dll",  Loyc_Essentials),
 			new Pair<string,Func<int>>("Run unit tests of Loyc.Collections.dll", Loyc_Collections),
-			new Pair<string,Func<int>>("Run unit tests of Loyc.Syntax.dll",	  Loyc_Syntax),
+			new Pair<string,Func<int>>("Run unit tests of Loyc.Syntax.dll",      Loyc_Syntax),
 			new Pair<string,Func<int>>("Run unit tests of Loyc.Utilities.dll",   Loyc_Utilities),
 		};
 
@@ -37,10 +37,7 @@ namespace Loyc.Tests
 			Debug.Listeners.Clear();
 			Debug.Listeners.Add( new DefaultTraceListener() );
 			if (RunMenu(Menu, args.Length > 0 ? args[0].GetEnumerator() : null) > 0)
-				// Let the outside world know that something
-				// went wrong by setting the exit code to
-				// '1'. This is particularly useful for
-				// automated tests (CI).
+				// Let the outside world know that something went wrong (e.g. Travis CI)
 				Environment.ExitCode = 1;
 		}
 
